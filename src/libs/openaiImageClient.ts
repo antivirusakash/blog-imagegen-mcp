@@ -287,9 +287,9 @@ export class OpenAIImageClient {
       response_format: RESPONSE_FORMATS.B64_JSON,
       style: STYLES.VIVID,
       background: BACKGROUNDS.AUTO,
-      quality: QUALITIES.AUTO,
-      output_format: OUTPUT_FORMATS.PNG,
-      output_compression: 100,
+      quality: QUALITIES.LOW,
+      output_format: OUTPUT_FORMATS.WEBP,
+      output_compression: 30,
       moderation: MODERATION_LEVELS.LOW,
     };
 
