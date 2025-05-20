@@ -178,7 +178,7 @@ export class OpenAIImageClient {
     const defaults = {
       model: MODELS.GPT_IMAGE, // Only dall-e-2 and gpt-image-1 are supported for edits
       n: 1,
-      size: SIZES.S1024,
+      size: SIZES.LANDSCAPE,
       response_format: RESPONSE_FORMATS.B64_JSON,
       quality: QUALITIES.AUTO,
       output_format: OUTPUT_FORMATS.PNG,
@@ -283,7 +283,7 @@ export class OpenAIImageClient {
     const defaults = {
       model: this.getDefaultModel(),
       n: 1,
-      size: SIZES.S1024,
+      size: SIZES.LANDSCAPE,
       response_format: RESPONSE_FORMATS.B64_JSON,
       style: STYLES.VIVID,
       background: BACKGROUNDS.AUTO,
