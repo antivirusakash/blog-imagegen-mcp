@@ -1,6 +1,7 @@
 # MCP OpenAI Image Generation Server
 
 [![npm version](https://img.shields.io/npm/v/imagegen-mcp)](https://www.npmjs.com/package/imagegen-mcp)
+[![smithery badge](https://smithery.ai/badge/@antivirusakash/imagegen-mcp)](https://smithery.ai/server/@antivirusakash/imagegen-mcp)
 
 This project provides a server implementation based on the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/introduction) that acts as a wrapper around OpenAI's Image Generation and Editing APIs (see [OpenAI documentation](https://platform.openai.com/docs/api-reference/images)).
 
