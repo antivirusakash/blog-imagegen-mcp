@@ -51,11 +51,10 @@ server.tool("text-to-image",
     output_format: z.enum(objectValuesToZodEnum(OUTPUT_FORMATS)).optional().describe("The format of the generated image").default(OUTPUT_FORMATS.WEBP),
     output_compression: z.number().optional().describe("The compression of the generated image").default(100),
     moderation: z.enum(objectValuesToZodEnum(MODERATION_LEVELS)).optional().describe("The moderation level of the generated image").default(MODERATION_LEVELS.LOW),
-    background: z.enum(objectValuesToZodEnum(BACKGROUNDS)).optional().describe("The background of the generated image").default(BACKGROUNDS.AUTO),
     quality: z.enum(objectValuesToZodEnum(QUALITIES)).optional().describe("The quality of the generated image").default(QUALITIES.MEDIUM),
     n: z.number().optional().describe("The number of images to generate").default(1), 
   },
-  async ({ text, model, size, style, output_format, output_compression, moderation, background, quality, n, outputPath }) => {
+  async ({ text, model, size, style, output_format, output_compression, moderation, quality, n, outputPath }) => {
     try {
       const result = await imageClient.generateImages({
         prompt: text,
@@ -66,7 +65,6 @@ server.tool("text-to-image",
         output_format: output_format as any,
         output_compression: output_compression as any,
         moderation: moderation as any,
-        background: background as any,
         quality: quality as any,
         n: n as any
       });
