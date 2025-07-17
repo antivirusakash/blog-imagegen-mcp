@@ -9,7 +9,12 @@ dotenv.config();
 
 /**
  * Clean, simple MCP server for OpenAI Image Generation
- * Smithery deployment-friendly with no top-level await
+ * 
+ * Smithery deployment-friendly features:
+ * - No top-level await (CommonJS compatible)
+ * - Lazy loading: tools discoverable without API key
+ * - Proper error handling and validation
+ * - TypeScript runtime configuration in smithery.yaml
  */
 class ImageGenServer {
   private server: McpServer;
@@ -32,10 +37,11 @@ class ImageGenServer {
   }
 
   /**
-   * Setup MCP tools
+   * Setup MCP tools with lazy loading for Smithery deployment
+   * Tools are registered even without API key for discovery
    */
   private setupTools(): void {
-    // Get available models
+    // Get available models - fallback to standard models for discovery
     const availableModels = this.client ? 
       Object.values(this.client.getAllowedModels()) : 
       ['gpt-image-1', 'dall-e-2', 'dall-e-3'];
@@ -44,7 +50,7 @@ class ImageGenServer {
       this.client.getDefaultModel() : 
       'gpt-image-1';
 
-    // Text-to-image generation tool
+    // Text-to-image generation tool - available for discovery without API key
     this.server.tool("text-to-image", {
       text: z.string().describe("The prompt to generate an image from"),
       outputPath: z.string().optional().describe("Absolute path or directory where the output file should be saved. Defaults to the current working directory."),
@@ -60,7 +66,7 @@ class ImageGenServer {
       return this.handleTextToImage(args);
     });
 
-    // Image-to-image editing tool
+    // Image-to-image editing tool - available for discovery without API key
     this.server.tool("image-to-image", {
       images: z.array(z.string()).describe("The images to edit. Must be an array of file paths."),
       prompt: z.string().describe("A text description of the desired image(s)"),

@@ -1,1 +1,18 @@
-runtime: "typescript" 
+runtime: "typescript"
+build:
+  # TypeScript build configuration
+  tsconfig: "tsconfig.json"
+  
+startCommand:
+  type: "stdio"
+  configSchema:
+    type: "object"
+    properties:
+      OPENAI_API_KEY:
+        type: "string"
+        description: "Your OpenAI API key for image generation"
+        pattern: "^sk-[a-zA-Z0-9]{32,}$"
+    required: ["OPENAI_API_KEY"]
+  
+  exampleConfig:
+    OPENAI_API_KEY: "sk-example123456789012345678901234567890" 
