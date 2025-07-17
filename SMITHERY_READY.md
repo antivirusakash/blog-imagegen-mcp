@@ -12,12 +12,17 @@ This OpenAI Image Generation MCP Server is now fully configured and ready for Sm
 - [x] **MCP Compatibility** - Follows MCP protocol specifications
 - [x] **Documentation** - Complete deployment guide and README updates
 
-## 🔧 Critical Fix Applied
+## 🔧 Critical Fixes Applied
 
-### Module Field Configuration
+### 1. Module Field Configuration
 - **Issue**: Smithery CLI requires a `module` field in package.json for TypeScript projects
 - **Solution**: Added `"module": "./src/index.ts"` to package.json
 - **Result**: Smithery build process now correctly identifies the TypeScript entry point
+
+### 2. CommonJS Compatibility (Top-level await)
+- **Issue**: Smithery builds to CommonJS format which doesn't support top-level await
+- **Solution**: Wrapped server initialization in async function `startServer()`
+- **Result**: Code now compiles to CommonJS without top-level await errors
 
 ## 🚀 Key Features for Smithery
 

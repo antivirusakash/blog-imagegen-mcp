@@ -130,6 +130,29 @@ The server implements Smithery's recommended "lazy loading" pattern:
 2. **Model Restrictions**: Check model-specific size limitations
 3. **File Paths**: Ensure output directories exist and are writable
 
+## Common Issues and Solutions
+
+### Issue: "No entry point found"
+**Solution**: Ensure your package.json has a `module` field pointing to your TypeScript entry point:
+```json
+{
+  "module": "./src/index.ts"
+}
+```
+
+### Issue: "Top-level await is not supported with cjs output format"
+**Solution**: Avoid top-level await in your main entry file. Instead, wrap async initialization in a function:
+```typescript
+// ❌ Don't do this (top-level await)
+await server.connect(transport);
+
+// ✅ Do this instead
+async function startServer() {
+  await server.connect(transport);
+}
+startServer().catch(console.error);
+```
+
 ### Support
 
 - [Smithery Documentation](https://smithery.ai/docs)

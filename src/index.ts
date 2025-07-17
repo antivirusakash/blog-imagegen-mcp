@@ -254,15 +254,26 @@ server.tool("image-to-image",
   }
 );
 
-// Start the MCP server
-const transport = new StdioServerTransport();
-await server.connect(transport);
+/**
+ * Start the MCP server
+ * Wrapped in async function to avoid top-level await (required for CommonJS compatibility)
+ */
+async function startServer() {
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
 
-console.log("OpenAI Image Generation MCP Server started successfully");
-console.log("Available models:", getAvailableModels());
-console.log("Default model:", getDefaultModel());
-if (OPENAI_API_KEY) {
-  console.log("✅ OpenAI API key configured");
-} else {
-  console.log("⚠️  OpenAI API key not configured - tools will require configuration before use");
+  console.log("OpenAI Image Generation MCP Server started successfully");
+  console.log("Available models:", getAvailableModels());
+  console.log("Default model:", getDefaultModel());
+  if (OPENAI_API_KEY) {
+    console.log("✅ OpenAI API key configured");
+  } else {
+    console.log("⚠️  OpenAI API key not configured - tools will require configuration before use");
+  }
 }
+
+// Start the server and handle any errors
+startServer().catch((error) => {
+  console.error("Failed to start MCP server:", error);
+  process.exit(1);
+});
