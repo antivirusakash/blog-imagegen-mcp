@@ -403,7 +403,8 @@ export class OpenAIImageClient {
     } else {
       // Default behavior - save to /tmp with UUID filename
       const uuid = uuidv4();
-      const tempDir = os.tmpdir();
+      // Save into the directory where the MCP server was invoked (current working directory)
+      const tempDir = process.cwd();
 
       if (!fs.existsSync(tempDir)) {
         fs.mkdirSync(tempDir, { recursive: true });
