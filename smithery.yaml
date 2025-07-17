@@ -1,0 +1,36 @@
+# Smithery configuration file: https://smithery.ai/docs/build/project-config
+
+startCommand:
+  type: stdio
+  commandFunction:
+    # A JS function that produces the CLI command based on the given config to start the MCP on stdio.
+    |-
+    (config) => {
+      const cmd = 'node';
+      const args = ['dist/index.js'];
+      if (config.models && Array.isArray(config.models) && config.models.length > 0) {
+        args.push('--models', ...config.models);
+      }
+      return { command: cmd, args, env: { OPENAI_API_KEY: config.openAiApiKey } };
+    }
+  configSchema:
+    # JSON Schema defining the configuration options for the MCP.
+    type: object
+    required:
+      - openAiApiKey
+    properties:
+      openAiApiKey:
+        type: string
+        default: ""
+        description: OpenAI API key
+      models:
+        type: array
+        items:
+          type: string
+        default: []
+        description: List of OpenAI image models to enable
+  exampleConfig:
+    openAiApiKey: sk-xxxxxxxxxxxxxxxxxxxx
+    models:
+      - dall-e-2
+      - dall-e-3
