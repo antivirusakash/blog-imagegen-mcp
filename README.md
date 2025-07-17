@@ -1,8 +1,8 @@
 # OpenAI Image Generation MCP Server
 
-A Model Context Protocol (MCP) server that provides image generation and editing capabilities using OpenAI's latest image models including DALL-E 3 and GPT-image-1.
+A clean, simple Model Context Protocol (MCP) server for generating and editing images using OpenAI's latest image models including DALL-E 3 and GPT-image-1.
 
-## Features
+## ✨ Features
 
 - **Text-to-Image Generation**: Generate high-quality images from text descriptions
 - **Image-to-Image Editing**: Edit existing images with text prompts
@@ -10,280 +10,168 @@ A Model Context Protocol (MCP) server that provides image generation and editing
 - **Flexible Output Options**: Various sizes, formats, and quality settings
 - **Smart Directory Management**: Proper image saving with configurable output paths
 - **Content Safety**: Built-in prompt validation and content filtering
-- **MCP Compatible**: Seamless integration with MCP-enabled applications
+- **Smithery Ready**: Optimized for easy deployment on Smithery platform
+- **CommonJS Compatible**: No top-level await for better compatibility
 
-## Supported Models
-
-| Model | Text-to-Image | Image-to-Image | Max Images | Sizes Supported |
-|-------|---------------|----------------|------------|-----------------|
-| `dall-e-2` | ✅ | ✅ | 10 | 256x256, 512x512, 1024x1024 |
-| `dall-e-3` | ✅ | ❌ | 1 | 1024x1024, 1792x1024, 1024x1792 |
-| `gpt-image-1` | ✅ | ✅ | 10 | 1024x1024, 1024x1536, 1536x1024 |
-
-## Installation
-
-### Prerequisites
-
-- Node.js 18 or higher
-- OpenAI API key
+## 🚀 Quick Start
 
 ### Smithery Deployment (Recommended)
 
-The easiest way to deploy this MCP server is through [Smithery](https://smithery.ai):
+Deploy instantly on [Smithery](https://smithery.ai):
 
-1. **Fork/Clone** this repository to your GitHub account
-2. **Create account** at [smithery.ai](https://smithery.ai)
-3. **Connect GitHub** and import this repository
-4. **Configure** your `OPENAI_API_KEY` environment variable
+1. **Fork** this repository to your GitHub account
+2. **Connect** your GitHub to Smithery
+3. **Import** this repository
+4. **Set** your `OPENAI_API_KEY` environment variable
 5. **Deploy** with one click
 
-The server includes lazy loading for tool discovery, making it easy for users to explore capabilities before configuration.
-
-For detailed deployment instructions, see [DEPLOYMENT.md](DEPLOYMENT.md).
-
-### Install from npm
+### Local Installation
 
 ```bash
-npm install -g imagegen-mcp
-```
-
-### Install from source
-
-```bash
+# Clone the repository
 git clone https://github.com/spartanz51/imagegen-mcp.git
 cd imagegen-mcp
+
+# Install dependencies
 npm install
+
+# Set your OpenAI API key
+export OPENAI_API_KEY="your-api-key-here"
+
+# Build and run
 npm run build
+npm start
 ```
 
-## Configuration
+## 📋 Supported Models
+
+| Model | Text-to-Image | Image-to-Image | Max Images | Best For |
+|-------|---------------|----------------|------------|----------|
+| **GPT-image-1** | ✅ | ✅ | 1 | Latest model with superior understanding |
+| **DALL-E 3** | ✅ | ❌ | 1 | High-quality artistic images |
+| **DALL-E 2** | ✅ | ✅ | 10 | Batch generation and editing |
+
+## 🛠️ Configuration
 
 ### Environment Variables
 
-Create a `.env` file in your project root:
+```bash
+# Required
+OPENAI_API_KEY=your_openai_api_key
 
-```env
-OPENAI_API_KEY=your_openai_api_key_here
+# Optional
+DEFAULT_OUTPUT_PATH=/path/to/save/images
 ```
 
-### MCP Settings
+### Supported Parameters
 
-Add to your MCP client configuration:
+#### Text-to-Image
+- **text**: Image description prompt
+- **model**: `gpt-image-1` | `dall-e-3` | `dall-e-2`
+- **size**: `256x256` | `512x512` | `1024x1024` | `1536x1024` | `1024x1536` | `1792x1024` | `1024x1792`
+- **style**: `vivid` | `natural` (DALL-E 3 only)
+- **quality**: `standard` | `hd` | `low` | `medium` | `high`
+- **output_format**: `png` | `jpeg` | `webp`
+- **output_compression**: 0-100 (compression level)
+- **moderation**: `low` | `auto`
+- **n**: 1-10 (number of images, DALL-E 2 only)
 
+#### Image-to-Image
+- **images**: Array of image file paths
+- **prompt**: Description of desired changes
+- **mask**: Optional mask image path
+- **model**: `gpt-image-1` | `dall-e-2` (DALL-E 3 not supported)
+- All other parameters same as text-to-image
+
+## 📁 Project Structure
+
+```
+blog-imagegen-mcp/
+├── src/
+│   ├── index.ts              # Main server implementation
+│   └── libs/
+│       └── openaiImageClient.ts  # OpenAI API client
+├── dist/                     # Compiled JavaScript
+├── smithery.yaml            # Smithery configuration
+├── package.json             # Dependencies and scripts
+└── README.md               # This file
+```
+
+## 🔧 Architecture
+
+The codebase follows a clean, modular architecture:
+
+- **Single Entry Point**: `src/index.ts` contains the complete MCP server
+- **Clean Class Structure**: `ImageGenServer` class handles all functionality
+- **No Top-level Await**: CommonJS compatible for Smithery deployment
+- **Lazy Loading**: Tools are discoverable without API key configuration
+- **Proper Error Handling**: Comprehensive error messages and validation
+
+## 🧪 Testing
+
+```bash
+# Test tool discovery
+echo '{"jsonrpc": "2.0", "id": 1, "method": "tools/list"}' | node dist/index.js
+
+# Test image generation (requires API key)
+echo '{"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "text-to-image", "arguments": {"text": "A beautiful sunset"}}}' | OPENAI_API_KEY=your-key node dist/index.js
+```
+
+## 🔒 Security
+
+- **Input Validation**: All parameters are validated using Zod schemas
+- **Content Filtering**: Basic content safety checks on prompts
+- **File Path Validation**: Secure handling of file paths and directories
+- **API Key Protection**: Environment variable based configuration
+
+## 📚 Usage Examples
+
+### Basic Text-to-Image
 ```json
 {
-  "mcpServers": {
-    "imagegen": {
-      "command": "imagegen-mcp",
-      "env": {
-        "OPENAI_API_KEY": "your_openai_api_key_here"
-      }
-    }
-  }
+  "text": "A futuristic city at sunset with flying cars"
 }
 ```
 
-### Model Filtering
-
-You can restrict which models are available:
-
+### High-Quality Image with Specific Format
 ```json
 {
-  "mcpServers": {
-    "imagegen": {
-      "command": "imagegen-mcp",
-      "args": ["--models", "gpt-image-1", "dall-e-3"],
-      "env": {
-        "OPENAI_API_KEY": "your_openai_api_key_here"
-      }
-    }
-  }
+  "text": "A serene mountain lake with perfect reflections",
+  "model": "dall-e-3",
+  "size": "1792x1024",
+  "quality": "hd",
+  "style": "natural",
+  "output_format": "webp"
 }
 ```
 
-## Usage
-
-### Text-to-Image Generation
-
-The `text-to-image` tool generates images from text descriptions:
-
-**Parameters:**
-- `text` (required): The text prompt describing the image
-- `outputPath` (optional): Directory or file path where the image should be saved
-- `model` (optional): Model to use (`dall-e-2`, `dall-e-3`, `gpt-image-1`)
-- `size` (optional): Image dimensions
-- `style` (optional): Style for DALL-E 3 (`vivid`, `natural`)
-- `output_format` (optional): Output format (`png`, `jpeg`, `webp`)
-- `output_compression` (optional): Compression level (0-100)
-- `quality` (optional): Image quality setting
-- `n` (optional): Number of images to generate (1-10, model dependent)
-
-**Example:**
-```javascript
-// Generate a high-quality image with GPT-image-1
+### Image Editing
+```json
 {
-  "text": "A majestic mountain landscape at sunset with a crystal clear lake reflecting the sky",
-  "model": "gpt-image-1",
-  "size": "1536x1024",
-  "quality": "high",
-  "output_format": "webp",
-  "outputPath": "/path/to/save/directory"
+  "images": ["/path/to/image.jpg"],
+  "prompt": "Add a rainbow in the sky",
+  "model": "gpt-image-1"
 }
 ```
 
-### Image-to-Image Editing
-
-The `image-to-image` tool edits existing images based on text prompts:
-
-**Parameters:**
-- `images` (required): Array of image file paths to edit
-- `prompt` (required): Text description of desired changes
-- `outputPath` (optional): Directory or file path where the edited image should be saved
-- `mask` (optional): Mask image path (PNG with transparent areas to edit)
-- `model` (optional): Model to use (`dall-e-2`, `gpt-image-1`)
-- `size` (optional): Output image dimensions
-- `output_format` (optional): Output format (`png`, `jpeg`, `webp`)
-- `output_compression` (optional): Compression level (0-100)
-- `quality` (optional): Image quality setting
-- `n` (optional): Number of edited images to generate
-
-**Example:**
-```javascript
-// Edit an image to add elements
-{
-  "images": ["/path/to/input/image.jpg"],
-  "prompt": "Add a rainbow in the sky and make the lighting more dramatic",
-  "model": "gpt-image-1",
-  "size": "1024x1024",
-  "quality": "high",
-  "outputPath": "/path/to/save/directory"
-}
-```
-
-## Quality Settings
-
-### DALL-E 2 & 3
-- `standard`: Standard quality (faster)
-- `hd`: High definition (slower, more detailed)
-
-### GPT-image-1
-- `low`: Low quality (fastest)
-- `medium`: Medium quality (balanced)
-- `high`: High quality (slowest, most detailed)
-
-## Output Formats
-
-- **PNG**: Best for images with transparency or sharp edges
-- **JPEG**: Best for photographs and complex images
-- **WEBP**: Best balance of quality and file size
-
-## Image Sizes
-
-### DALL-E 2
-- `256x256`: Small square
-- `512x512`: Medium square  
-- `1024x1024`: Large square
-
-### DALL-E 3
-- `1024x1024`: Square
-- `1792x1024`: Wide landscape
-- `1024x1792`: Tall portrait
-
-### GPT-image-1
-- `1024x1024`: Square
-- `1536x1024`: Wide landscape
-- `1024x1536`: Tall portrait
-
-## File Management
-
-### Output Path Behavior
-
-- **No outputPath**: Saves to current working directory with UUID filename
-- **Directory path**: Saves to specified directory with UUID filename
-- **File path**: Saves to exact specified location
-- **Relative path**: Resolved relative to current working directory
-
-### File Naming
-
-- Generated images use UUID filenames by default: `550e8400-e29b-41d4-a716-446655440000.webp`
-- Specify exact filename in outputPath to override: `/path/to/my-image.png`
-
-## Error Handling
-
-The server includes comprehensive error handling for:
-
-- **Content Safety**: Automatic prompt validation and sanitization
-- **File Validation**: Image size limits (20MB max) and format checking
-- **API Errors**: Detailed error messages from OpenAI API
-- **Path Validation**: Directory creation and file permission checks
-
-## Content Safety
-
-Built-in content filtering prevents generation of:
-- Explicit or inappropriate content
-- Violence or harmful imagery
-- Copyrighted material
-- Personal information
-
-## Development
-
-### Building
-
-```bash
-npm run build
-```
-
-### Running in Development
-
-```bash
-npm run dev
-```
-
-### Testing
-
-```bash
-# Test the MCP server
-echo '{"text": "A beautiful sunset"}' | node dist/index.js
-```
-
-## API Compatibility
-
-This server is built to work with the latest OpenAI Image Generation API specifications as of 2024. It supports:
-
-- OpenAI API v1 endpoints
-- Latest model parameters and options
-- Proper error handling and response formats
-- Content moderation and safety features
-
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Add tests if applicable
+4. Test thoroughly
 5. Submit a pull request
 
-## License
+## 📄 License
 
 ISC License - see LICENSE file for details
 
-## Support
+## 🆘 Support
 
-For issues and questions:
-- GitHub Issues: [https://github.com/spartanz51/imagegen-mcp/issues](https://github.com/spartanz51/imagegen-mcp/issues)
-- Documentation: This README and inline code comments
+- [GitHub Issues](https://github.com/spartanz51/imagegen-mcp/issues)
+- [Smithery Documentation](https://smithery.ai/docs)
+- [OpenAI API Documentation](https://platform.openai.com/docs/api-reference/images)
 
-## Changelog
+---
 
-### v1.1.0
-- Added support for GPT-image-1 model
-- Enhanced image editing capabilities
-- Improved file path handling and MCP compatibility
-- Added content safety validation
-- Better error handling and logging
-- Updated API parameters to match latest OpenAI specifications
-
-### v1.0.4
-- Initial release with DALL-E 2 and DALL-E 3 support
-- Basic text-to-image generation
-- Image editing functionality 
+**Ready to generate amazing images?** Deploy on [Smithery](https://smithery.ai) now! 🚀 
