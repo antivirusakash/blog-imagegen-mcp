@@ -1,63 +1,19 @@
 {
-  "name": "imagegen-mcp",
-  "version": "2.0.0",
-  "description": "MCP server to generate and edit images using OpenAI's latest API (DALL-E 3, GPT-image-1)",
-  "keywords": [
-    "mcp",
-    "openai",
-    "image",
-    "generation",
-    "imagegen",
-    "mcp-server",
-    "smithery"
-  ],
-  "author": "Anthony Maurin",
-  "homepage": "https://github.com/spartanz51/imagegen-mcp#readme",
-  "bugs": {
-    "url": "https://github.com/spartanz51/imagegen-mcp/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/spartanz51/imagegen-mcp.git"
-  },
-  "license": "ISC",
+  "name": "openai-image-mcp",
+  "version": "1.0.0",
+  "description": "MCP server that generates images using OpenAI gpt-image-1 model.",
   "type": "module",
-  "main": "dist/index.js",
-  "module": "./src/index.ts",
-  "bin": {
-    "imagegen-mcp": "./bin/imagegen-mcp.js"
-  },
+  "main": "./dist/index.js",
   "scripts": {
-    "build": "tsc",
-    "prepare": "npm run build",
-    "start": "node dist/index.js",
-    "dev": "tsx src/index.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "smithery dev",
+    "build": "smithery build"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.10.2",
-    "@types/form-data": "^2.2.1",
-    "dotenv": "^16.3.1",
-    "form-data": "^4.0.2",
-    "formdata-node": "^6.0.3",
-    "install": "^0.13.0",
-    "node-fetch": "^3.3.2",
-    "npm": "^11.3.0",
-    "uuid": "^11.1.0"
+    "@modelcontextprotocol/sdk": "^1.16.0",
+    "openai": "^4.29.0",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
-    "@types/node": "^20.11.0",
-    "@types/uuid": "^10.0.0",
-    "tsx": "^4.7.0",
     "typescript": "^5.3.3"
-  },
-  "mcp": {
-    "server": {
-      "command": "node",
-      "args": ["dist/index.js"],
-      "env": {
-        "OPENAI_API_KEY": "${OPENAI_API_KEY}"
-      }
-    }
   }
-}
+} 
