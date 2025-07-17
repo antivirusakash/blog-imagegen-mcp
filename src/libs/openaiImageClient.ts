@@ -363,51 +363,56 @@ export class OpenAIImageClient {
    * @returns The path to the saved file
    */
   saveImageToTempFile(
-    imageData: string, 
+    imageData: string,
     outputFormat: ImageOutputFormat = OUTPUT_FORMATS.PNG,
     outputPath?: string
   ): string {
     // Remove data URL prefix if present
-    const base64Data = imageData.includes('base64,') ? 
-      imageData.split('base64,')[1] : 
-      imageData;
-    
+    const base64Data = imageData.includes('base64,')
+      ? imageData.split('base64,')[1]
+      : imageData;
+
     const buffer = Buffer.from(base64Data, 'base64');
-    
+
     let filePath: string;
-    
+
     if (outputPath) {
-      // Check if outputPath includes a filename (has an extension)
       const parsedPath = path.parse(outputPath);
-      
+
       if (parsedPath.ext) {
         // outputPath includes a filename
         filePath = outputPath;
-        
+
         // Ensure the directory exists
         const dirPath = parsedPath.dir;
-        if (!fs.existsSync(dirPath)) {
+        if (dirPath && !fs.existsSync(dirPath)) {
           fs.mkdirSync(dirPath, { recursive: true });
         }
       } else {
         // outputPath is just a directory, use UUID for filename
         const uuid = uuidv4();
-        
+
         // Ensure the directory exists
         if (!fs.existsSync(outputPath)) {
           fs.mkdirSync(outputPath, { recursive: true });
         }
-        
+
         filePath = path.join(outputPath, `${uuid}.${outputFormat}`);
       }
     } else {
       // Default behavior - save to /tmp with UUID filename
       const uuid = uuidv4();
-      filePath = path.join('/tmp', `${uuid}.${outputFormat}`);
+      const tempDir = '/tmp';
+
+      if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+      }
+
+      filePath = path.join(tempDir, `${uuid}.${outputFormat}`);
     }
-    
+
     fs.writeFileSync(filePath, buffer);
-    
+
     return filePath;
   }
 
