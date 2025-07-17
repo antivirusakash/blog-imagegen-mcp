@@ -149,7 +149,7 @@ Generates an image based on a text prompt.
 **Returns:**
 
 *   `content`: An array containing:
-    *   A `text` object containing the path to the saved temporary image file (e.g., `/tmp/uuid.png`).
+    *   A `text` object containing the path to the saved temporary image file (e.g., `<system-temp>/uuid.png`, that is `/tmp/uuid.png` on Linux/macOS or `C:\\Users\\<user>\\AppData\\Local\\Temp\\uuid.png` on Windows).
 
 ### `image-to-image`
 
@@ -170,7 +170,7 @@ Edits an existing image based on a text prompt and optional mask.
 **Returns:**
 
 *   `content`: An array containing:
-    *   A `text` object containing the path to the saved temporary image file (e.g., `/tmp/uuid.png`).
+    *   A `text` object containing the path to the saved temporary image file (e.g., `<system-temp>/uuid.png`, that is `/tmp/uuid.png` on Linux/macOS or `C:\\Users\\<user>\\AppData\\Local\\Temp\\uuid.png` on Windows).
 
 ## Development
 

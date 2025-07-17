@@ -3,6 +3,7 @@ import FormData from 'form-data';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 
 // Constants for use in Zod schemas and other runtime contexts
 export const MODELS = {
@@ -402,7 +403,7 @@ export class OpenAIImageClient {
     } else {
       // Default behavior - save to /tmp with UUID filename
       const uuid = uuidv4();
-      const tempDir = '/tmp';
+      const tempDir = os.tmpdir();
 
       if (!fs.existsSync(tempDir)) {
         fs.mkdirSync(tempDir, { recursive: true });
