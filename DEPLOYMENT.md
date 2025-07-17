@@ -28,6 +28,7 @@ runtime: "typescript"
 #### package.json
 Your package.json should include:
 - Proper `main` entry point (`dist/index.js`)
+- **Required**: `module` field pointing to TypeScript source (`./src/index.ts`)
 - Build script (`npm run build`)
 - MCP server configuration in the `mcp` section
 

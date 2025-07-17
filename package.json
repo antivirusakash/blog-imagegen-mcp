@@ -23,6 +23,7 @@
   "license": "ISC",
   "type": "module",
   "main": "dist/index.js",
+  "module": "./src/index.ts",
   "bin": {
     "imagegen-mcp": "./bin/imagegen-mcp.js"
   },
