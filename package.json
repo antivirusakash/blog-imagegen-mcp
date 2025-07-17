@@ -4,6 +4,7 @@
   "description": "MCP server that generates images using OpenAI gpt-image-1 model.",
   "type": "module",
   "main": "./dist/index.js",
+  "module": "./src/index.ts",
   "scripts": {
     "dev": "smithery dev",
     "build": "smithery build"
