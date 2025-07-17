@@ -35,10 +35,11 @@ export const STYLES = {
 
 export const QUALITIES = {
   STANDARD: 'standard',
-  AUTO: 'auto',
-  HIGH: 'high',
+  HD: 'hd',
+  // GPT-image-1 specific quality options
+  LOW: 'low',
   MEDIUM: 'medium',
-  LOW: 'low'
+  HIGH: 'high'
 } as const;
 
 export const BACKGROUNDS = {
@@ -179,9 +180,8 @@ export class OpenAIImageClient {
     const defaults = {
       model: MODELS.GPT_IMAGE, // Only dall-e-2 and gpt-image-1 are supported for edits
       n: 1,
-      size: SIZES.LANDSCAPE,
+      size: SIZES.S1024,
       response_format: RESPONSE_FORMATS.B64_JSON,
-      quality: QUALITIES.AUTO,
       output_format: OUTPUT_FORMATS.PNG,
       output_compression: 100,
     };
@@ -213,16 +213,33 @@ export class OpenAIImageClient {
       throw new Error('dall-e-2 only supports sizes 256x256, 512x512, or 1024x1024');
     }
 
+    // GPT-image-1 size validation
+    if (params.model === MODELS.GPT_IMAGE && params.size && 
+        params.size !== '1024x1024' && params.size !== '1024x1536' && params.size !== '1536x1024') {
+      throw new Error('gpt-image-1 only supports sizes 1024x1024, 1024x1536, or 1536x1024');
+    }
+
     const formData = new FormData();
     
-    // Append all provided image files using array notation for multiple images
-    params.images.forEach((filePath, index) => {
-      if (!fs.existsSync(filePath)) {
-        throw new Error(`Image file not found: ${filePath}`);
-      }
-      const buffer = fs.readFileSync(filePath);
-      formData.append('image[]', buffer, { filename: path.basename(filePath) });
-    });
+    // The official API supports only a single image for editing
+    if (params.images.length > 1) {
+      throw new Error('The image edit endpoint accepts exactly one image');
+    }
+
+    const [firstImagePath] = params.images;
+    if (!fs.existsSync(firstImagePath)) {
+      throw new Error(`Image file not found: ${firstImagePath}`);
+    }
+    
+    // Validate image file size (must be less than 20MB)
+    const imageStats = fs.statSync(firstImagePath);
+    const maxSize = 20 * 1024 * 1024; // 20MB in bytes
+    if (imageStats.size > maxSize) {
+      throw new Error(`Image file too large: ${imageStats.size} bytes. Maximum allowed: ${maxSize} bytes (20MB)`);
+    }
+    
+    const imageBuffer = fs.readFileSync(firstImagePath);
+    formData.append('image', imageBuffer, { filename: path.basename(firstImagePath) });
     
     // Add mask if provided
     if (params.mask) {
@@ -238,7 +255,12 @@ export class OpenAIImageClient {
     if (params.model) formData.append('model', params.model);
     if (params.n) formData.append('n', params.n.toString());
     if (params.size) formData.append('size', params.size);
-    if (params.response_format && params.model !== MODELS.GPT_IMAGE) formData.append('response_format', params.response_format);
+    
+    // Response format handling - GPT-image-1 always returns base64
+    if (params.response_format && params.model !== MODELS.GPT_IMAGE) {
+      formData.append('response_format', params.response_format);
+    }
+    
     if (params.quality) formData.append('quality', params.quality);
     if (params.user) formData.append('user', params.user);
 
@@ -284,13 +306,13 @@ export class OpenAIImageClient {
     const defaults = {
       model: this.getDefaultModel(),
       n: 1,
-      size: SIZES.LANDSCAPE,
+      size: SIZES.S1024,
       response_format: RESPONSE_FORMATS.B64_JSON,
       style: STYLES.VIVID,
       background: BACKGROUNDS.AUTO,
-      quality: QUALITIES.LOW,
+      quality: QUALITIES.STANDARD,
       output_format: OUTPUT_FORMATS.WEBP,
-      output_compression: 30,
+      output_compression: 100,
       moderation: MODERATION_LEVELS.LOW,
     };
 
@@ -310,6 +332,11 @@ export class OpenAIImageClient {
       throw new Error('dall-e-3 model only supports n=1');
     }
     
+    // GPT-image-1 specific validation
+    if (params.model === MODELS.GPT_IMAGE && params.n && params.n > 10) {
+      throw new Error('gpt-image-1 model supports maximum n=10');
+    }
+    
     // Remove style parameter for models other than dall-e-3
     if (params.model !== MODELS.DALLE3) {
       params.style = undefined;
@@ -326,6 +353,12 @@ export class OpenAIImageClient {
       throw new Error('dall-e-3 only supports sizes 1024x1024, 1792x1024, or 1024x1792');
     }
 
+    // GPT-image-1 size validation
+    if (params.model === MODELS.GPT_IMAGE && params.size && 
+        params.size !== '1024x1024' && params.size !== '1024x1536' && params.size !== '1536x1024') {
+      throw new Error('gpt-image-1 only supports sizes 1024x1024, 1024x1536, or 1536x1024');
+    }
+
     // Handle transparency requirements
     if (params.background === BACKGROUNDS.TRANSPARENT && 
         params.output_format && 
@@ -333,10 +366,47 @@ export class OpenAIImageClient {
       throw new Error('When background is transparent, output_format must be png or webp');
     }
 
-    const requestParams = {...params};
-    if (params.model !== MODELS.DALLE2 && params.model !== MODELS.DALLE3) {
-      // gpt-image-1 always returns base64-encoded images and doesn't support response_format
-      requestParams.response_format = undefined;
+    // Build request body strictly adhering to the latest OpenAI Images API
+    const requestBody: Record<string, any> = {
+      model: params.model,
+      prompt: params.prompt
+    };
+
+    if (params.size) requestBody.size = params.size;
+    if (params.user) requestBody.user = params.user;
+
+    // DALL-E 2 specific parameters
+    if (params.model === MODELS.DALLE2) {
+      if (params.n) requestBody.n = params.n;
+      if (params.response_format) requestBody.response_format = params.response_format;
+    }
+
+    // DALL-E 3 specific parameters
+    if (params.model === MODELS.DALLE3) {
+      if (params.quality === QUALITIES.HD || params.quality === QUALITIES.STANDARD) {
+        requestBody.quality = params.quality;
+      }
+      if (params.style) requestBody.style = params.style;
+      if (params.response_format) requestBody.response_format = params.response_format;
+    }
+
+    // GPT-image-1 specific parameters
+    if (params.model === MODELS.GPT_IMAGE) {
+      if (params.n) requestBody.n = params.n;
+      // GPT-image-1 uses different quality values
+      if (params.quality === QUALITIES.LOW || params.quality === QUALITIES.MEDIUM || params.quality === QUALITIES.HIGH) {
+        requestBody.quality = params.quality;
+      } else if (params.quality === QUALITIES.STANDARD) {
+        requestBody.quality = QUALITIES.MEDIUM;
+      } else if (params.quality === QUALITIES.HD) {
+        requestBody.quality = QUALITIES.HIGH;
+      }
+      
+      // GPT-image-1 supports output_format and output_compression
+      if (params.output_format) requestBody.output_format = params.output_format;
+      if (params.output_compression) requestBody.output_compression = params.output_compression;
+      
+      // GPT-image-1 always returns base64, no need to set response_format
     }
 
     const response = await fetch(this.baseUrl, {
@@ -345,7 +415,7 @@ export class OpenAIImageClient {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${this.apiKey}`
       },
-      body: JSON.stringify(requestParams)
+      body: JSON.stringify(requestBody)
     });
 
     if (!response.ok) {
@@ -358,10 +428,11 @@ export class OpenAIImageClient {
 
   /**
    * Saves an image to a file with a UUID filename or to a specific path
+   * Enhanced for better MCP compatibility with proper directory handling
    * @param imageData Base64 encoded image data
    * @param outputFormat The format to save the image as (default: png)
-   * @param outputPath Optional absolute path to save the image to (default: /tmp). Can include filename.
-   * @returns The path to the saved file
+   * @param outputPath Optional absolute path to save the image to. Can include filename.
+   * @returns The absolute path to the saved file
    */
   saveImageToTempFile(
     imageData: string,
@@ -378,44 +449,74 @@ export class OpenAIImageClient {
     let filePath: string;
 
     if (outputPath) {
-      const parsedPath = path.parse(outputPath);
+      // Check if outputPath is an absolute path
+      if (path.isAbsolute(outputPath)) {
+        const parsedPath = path.parse(outputPath);
 
-      if (parsedPath.ext) {
-        // outputPath includes a filename
-        filePath = outputPath;
+        if (parsedPath.ext) {
+          // outputPath includes a filename
+          filePath = outputPath;
 
-        // Ensure the directory exists
-        const dirPath = parsedPath.dir;
-        if (dirPath && !fs.existsSync(dirPath)) {
-          fs.mkdirSync(dirPath, { recursive: true });
+          // Ensure the directory exists
+          const dirPath = parsedPath.dir;
+          if (dirPath && !fs.existsSync(dirPath)) {
+            fs.mkdirSync(dirPath, { recursive: true });
+          }
+        } else {
+          // outputPath is just a directory, use UUID for filename
+          const uuid = uuidv4();
+
+          // Ensure the directory exists
+          if (!fs.existsSync(outputPath)) {
+            fs.mkdirSync(outputPath, { recursive: true });
+          }
+
+          filePath = path.join(outputPath, `${uuid}.${outputFormat}`);
         }
       } else {
-        // outputPath is just a directory, use UUID for filename
-        const uuid = uuidv4();
+        // If not absolute, make it relative to current working directory
+        const absolutePath = path.resolve(process.cwd(), outputPath);
+        const parsedPath = path.parse(absolutePath);
 
-        // Ensure the directory exists
-        if (!fs.existsSync(outputPath)) {
-          fs.mkdirSync(outputPath, { recursive: true });
+        if (parsedPath.ext) {
+          // outputPath includes a filename
+          filePath = absolutePath;
+
+          // Ensure the directory exists
+          const dirPath = parsedPath.dir;
+          if (dirPath && !fs.existsSync(dirPath)) {
+            fs.mkdirSync(dirPath, { recursive: true });
+          }
+        } else {
+          // outputPath is just a directory, use UUID for filename
+          const uuid = uuidv4();
+
+          // Ensure the directory exists
+          if (!fs.existsSync(absolutePath)) {
+            fs.mkdirSync(absolutePath, { recursive: true });
+          }
+
+          filePath = path.join(absolutePath, `${uuid}.${outputFormat}`);
         }
-
-        filePath = path.join(outputPath, `${uuid}.${outputFormat}`);
       }
     } else {
-      // Default behavior - save to /tmp with UUID filename
+      // Default behavior - save to current working directory with UUID filename
       const uuid = uuidv4();
-      // Save into the directory where the MCP server was invoked (current working directory)
-      const tempDir = process.cwd();
+      const currentDir = process.cwd();
 
-      if (!fs.existsSync(tempDir)) {
-        fs.mkdirSync(tempDir, { recursive: true });
+      // Ensure the directory exists (should already exist but just in case)
+      if (!fs.existsSync(currentDir)) {
+        fs.mkdirSync(currentDir, { recursive: true });
       }
 
-      filePath = path.join(tempDir, `${uuid}.${outputFormat}`);
+      filePath = path.join(currentDir, `${uuid}.${outputFormat}`);
     }
 
+    // Write the file
     fs.writeFileSync(filePath, buffer);
 
-    return filePath;
+    // Return the absolute path for MCP compatibility
+    return path.resolve(filePath);
   }
 
   /**
@@ -423,8 +524,8 @@ export class OpenAIImageClient {
    * @param response The image generation response
    * @param index The index of the image to save (default: 0)
    * @param outputFormat The format to save the image as (default: png)
-   * @param outputPath Optional absolute path to save the image to (default: /tmp)
-   * @returns The path to the saved file
+   * @param outputPath Optional absolute path to save the image to (default: current working directory)
+   * @returns The absolute path to the saved file
    * @throws Error if the response does not contain base64 image data
    */
   saveResponseImageToTempFile(
@@ -439,18 +540,62 @@ export class OpenAIImageClient {
     
     return this.saveImageToTempFile(response.data[index].b64_json, outputFormat, outputPath);
   }
+
+  /**
+   * Validates image prompt for content safety
+   * @param prompt The prompt to validate
+   * @returns Sanitized prompt or throws error if unsafe
+   */
+  validateAndSanitizePrompt(prompt: string): string {
+    // Basic content validation
+    const sensitiveTerms = [
+      'nude', 'naked', 'explicit', 'sexual', 'violence', 'gore', 'blood',
+      'weapon', 'gun', 'knife', 'drug', 'illegal', 'hate', 'discrimination'
+    ];
+
+    const lowerPrompt = prompt.toLowerCase();
+    const foundSensitiveTerms = sensitiveTerms.filter(term => 
+      lowerPrompt.includes(term)
+    );
+
+    if (foundSensitiveTerms.length > 0) {
+      throw new Error(`Prompt contains potentially sensitive content: ${foundSensitiveTerms.join(', ')}`);
+    }
+
+    // Ensure prompt is not too long (OpenAI has a 1000 character limit)
+    if (prompt.length > 1000) {
+      throw new Error(`Prompt too long: ${prompt.length} characters. Maximum allowed: 1000 characters`);
+    }
+
+    return prompt.trim();
+  }
 }
 
 /**
  * Example usage:
  * 
  * const client = new OpenAIImageClient('your-api-key');
+ * 
+ * // Generate image with GPT-image-1
+ * const response = await client.generateImages({
+ *   prompt: 'A beautiful sunset over mountains',
+ *   model: 'gpt-image-1',
+ *   size: '1024x1024',
+ *   quality: 'high',
+ *   output_format: 'webp'
+ * });
+ * 
+ * // Save the image to a file
+ * const filePath = client.saveImageToTempFile(response.data[0].b64_json, 'webp', '/path/to/save');
+ * console.log(`Image saved to: ${filePath}`);
+ * 
+ * // Edit image
  * const editResponse = await client.editImages({
- *   images: ['/path/to/image.png'], // array of file paths
+ *   images: ['/path/to/image.png'],
  *   prompt: 'Add a rainbow in the sky'
  * });
  * 
- * // Save the edited image to a file
- * const filePath = client.saveResponseImageToTempFile(editResponse);
- * console.log(`Image saved to: ${filePath}`);
+ * // Save the edited image
+ * const editedFilePath = client.saveResponseImageToTempFile(editResponse);
+ * console.log(`Edited image saved to: ${editedFilePath}`);
  */

@@ -1,182 +1,289 @@
-# MCP OpenAI Image Generation Server
+# OpenAI Image Generation MCP Server
 
-[![npm version](https://img.shields.io/npm/v/imagegen-mcp)](https://www.npmjs.com/package/imagegen-mcp)
-[![smithery badge](https://smithery.ai/badge/@antivirusakash/imagegen-mcp)](https://smithery.ai/server/@antivirusakash/imagegen-mcp)
-
-This project provides a server implementation based on the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/introduction) that acts as a wrapper around OpenAI's Image Generation and Editing APIs (see [OpenAI documentation](https://platform.openai.com/docs/api-reference/images)).
+A Model Context Protocol (MCP) server that provides image generation and editing capabilities using OpenAI's latest image models including DALL-E 3 and GPT-image-1.
 
 ## Features
 
-*   Exposes OpenAI image generation capabilities through MCP tools.
-*   Supports `text-to-image` generation using models like DALL-E 2, DALL-E 3, and gpt-image-1 (if available/enabled).
-*   Supports `image-to-image` editing using DALL-E 2 and gpt-image-1 (if available/enabled).
-*   Configurable via environment variables and command-line arguments.
-*   Handles various parameters like size, quality, style, format, etc.
-*   Saves generated/edited images to temporary files and returns the path along with the base64 data.
+- **Text-to-Image Generation**: Generate high-quality images from text descriptions
+- **Image-to-Image Editing**: Edit existing images with text prompts
+- **Multiple Model Support**: DALL-E 2, DALL-E 3, and GPT-image-1
+- **Flexible Output Options**: Various sizes, formats, and quality settings
+- **Smart Directory Management**: Proper image saving with configurable output paths
+- **Content Safety**: Built-in prompt validation and content filtering
+- **MCP Compatible**: Seamless integration with MCP-enabled applications
 
-Here's an example of generating an image directly in Cursor using the `text-to-image` tool integrated via MCP:
+## Supported Models
 
-<div align="center">
-  <img src="https://raw.githubusercontent.com/spartanz51/imagegen-mcp/refs/heads/main/cursor.gif" alt="Example usage in Cursor" width="600"/>
-</div>
+| Model | Text-to-Image | Image-to-Image | Max Images | Sizes Supported |
+|-------|---------------|----------------|------------|-----------------|
+| `dall-e-2` | ✅ | ✅ | 10 | 256x256, 512x512, 1024x1024 |
+| `dall-e-3` | ✅ | ❌ | 1 | 1024x1024, 1792x1024, 1024x1792 |
+| `gpt-image-1` | ✅ | ✅ | 10 | 1024x1024, 1024x1536, 1536x1024 |
 
-## Quick Run with npx
+## Installation
 
-You can run the server directly from npm using `npx` (requires Node.js and npm):
+### Prerequisites
+
+- Node.js 18 or higher
+- OpenAI API key
+
+### Smithery Deployment (Recommended)
+
+The easiest way to deploy this MCP server is through [Smithery](https://smithery.ai):
+
+1. **Fork/Clone** this repository to your GitHub account
+2. **Create account** at [smithery.ai](https://smithery.ai)
+3. **Connect GitHub** and import this repository
+4. **Configure** your `OPENAI_API_KEY` environment variable
+5. **Deploy** with one click
+
+The server includes lazy loading for tool discovery, making it easy for users to explore capabilities before configuration.
+
+For detailed deployment instructions, see [DEPLOYMENT.md](DEPLOYMENT.md).
+
+### Install from npm
 
 ```bash
-npx imagegen-mcp [options]
+npm install -g imagegen-mcp
 ```
 
-See the [Running the Server](#running-the-server) section for more details on options and running locally.
+### Install from source
 
-## Prerequisites
-
-*   Node.js (v18 or later recommended)
-*   npm or yarn
-*   An OpenAI API key
-
-## Integration with Cursor
-
-You can easily integrate this server with Cursor to use its image generation capabilities directly within the editor:
-
-1.  **Open Cursor Settings:**
-    *   Go to `File > Preferences > Cursor Settings` (or use the shortcut `Ctrl+,` / `Cmd+,`).
-2.  **Navigate to MCP Settings:**
-    *   Search for "MCP" in the settings search bar.
-    *   Find the "Model Context Protocol: Custom Servers" setting.
-3.  **Add Custom Server:**
-    *   Click on "Edit in settings.json".
-    *   Add a new entry to the `mcpServers` array. It should look something like this:
-
-    ```json
-    "mcpServers": [
-        "image-generator-gpt-image": {
-            "command": "npx imagegen-mcp --models gpt-image-1",
-            "env": {
-                "OPENAI_API_KEY": "xxx"
-            }
-        }
-      // ... any other custom servers ...
-    ]
-    ```
-
-    *   **Customize the command:**
-        *   You can change the `--models` argument in the `command` field to specify which models you want Cursor to have access to (e.g., `--models dall-e-3` or `--models gpt-image-1`). Make sure your OpenAI API key has access to the selected models.
-4.  **Save Settings:**
-    *   Save the `settings.json` file.
-
-Cursor should now recognize the "OpenAI Image Gen" server, and its tools (`text-to-image`, `image-to-image`) will be available in the MCP tool selection list (e.g., when using `@` mention in chat or code actions).
-
-## Setup
-
-1.  **Clone the repository:**
-    ```bash
-    git clone <your-repository-url>
-    cd <repository-directory>
-    ```
-
-2.  **Install dependencies:**
-    ```bash
-    npm install
-    # or
-    yarn install
-    ```
-
-3.  **Configure Environment Variables:**
-    Create a `.env` file in the project root by copying the example:
-    ```bash
-    cp .env.example .env
-    ```
-    Edit the `.env` file and add your OpenAI API key:
-    ```
-    OPENAI_API_KEY=your_openai_api_key_here
-    ```
-
-## Building
-
-To build the TypeScript code into JavaScript:
 ```bash
+git clone https://github.com/spartanz51/imagegen-mcp.git
+cd imagegen-mcp
+npm install
 npm run build
-# or
-yarn build
-```
-This will compile the code into the `dist` directory.
-
-## Running the Server
-
-This section provides details on running the server locally after cloning and setup. For a quick start without cloning, see the [Quick Run with npx](#quick-run-with-npx) section.
-
-**Using ts-node (for development):**
-```bash
-npx ts-node src/index.ts [options]
 ```
 
-**Using the compiled code:**
-```bash
-node dist/index.js [options]
+## Configuration
+
+### Environment Variables
+
+Create a `.env` file in your project root:
+
+```env
+OPENAI_API_KEY=your_openai_api_key_here
 ```
 
-**Options:**
+### MCP Settings
 
-*   `--models <model1> <model2> ...`: Specify which OpenAI models the server should allow. If not provided, it defaults to allowing all models defined in `src/libs/openaiImageClient.ts` (currently gpt-image-1, dall-e-2, dall-e-3).
-    *   Example using `npx` (also works for local runs): `... --models gpt-image-1 dall-e-3`
-    *   Example after cloning: `node dist/index.js --models dall-e-3 dall-e-2`
+Add to your MCP client configuration:
 
-The server will start and listen for MCP requests via standard input/output (using `StdioServerTransport`).
+```json
+{
+  "mcpServers": {
+    "imagegen": {
+      "command": "imagegen-mcp",
+      "env": {
+        "OPENAI_API_KEY": "your_openai_api_key_here"
+      }
+    }
+  }
+}
+```
 
-## MCP Tools
+### Model Filtering
 
-The server exposes the following MCP tools:
+You can restrict which models are available:
 
-### `text-to-image`
+```json
+{
+  "mcpServers": {
+    "imagegen": {
+      "command": "imagegen-mcp",
+      "args": ["--models", "gpt-image-1", "dall-e-3"],
+      "env": {
+        "OPENAI_API_KEY": "your_openai_api_key_here"
+      }
+    }
+  }
+}
+```
 
-Generates an image based on a text prompt.
+## Usage
+
+### Text-to-Image Generation
+
+The `text-to-image` tool generates images from text descriptions:
 
 **Parameters:**
+- `text` (required): The text prompt describing the image
+- `outputPath` (optional): Directory or file path where the image should be saved
+- `model` (optional): Model to use (`dall-e-2`, `dall-e-3`, `gpt-image-1`)
+- `size` (optional): Image dimensions
+- `style` (optional): Style for DALL-E 3 (`vivid`, `natural`)
+- `output_format` (optional): Output format (`png`, `jpeg`, `webp`)
+- `output_compression` (optional): Compression level (0-100)
+- `quality` (optional): Image quality setting
+- `n` (optional): Number of images to generate (1-10, model dependent)
 
-*   `text` (string, required): The prompt to generate an image from.
-*   `model` (enum, optional): The model to use (e.g., `gpt-image-1`, `dall-e-2`, `dall-e-3`). Defaults to the first allowed model.
-*   `size` (enum, optional): Size of the generated image (e.g., `1024x1024`, `1792x1024`). Defaults to `1024x1024`. Check OpenAI documentation for model-specific size support.
-*   `style` (enum, optional): Style of the image (`vivid` or `natural`). Only applicable to `dall-e-3`. Defaults to `vivid`.
-*   `output_format` (enum, optional): Format (`png`, `jpeg`, `webp`). Defaults to `png`.
-*   `output_compression` (number, optional): Compression level (0-100). Defaults to 100.
-*   `moderation` (enum, optional): Moderation level (`low`, `auto`). Defaults to `low`.
-*   `background` (enum, optional): Background (`transparent`, `opaque`, `auto`). Defaults to `auto`. `transparent` requires `output_format` to be `png` or `webp`.
-*   `quality` (enum, optional): Quality (`standard`, `hd`, `auto`, ...). Defaults to `auto`. `hd` only applicable to `dall-e-3`.
-*   `n` (number, optional): Number of images to generate. Defaults to 1. Note: `dall-e-3` only supports `n=1`.
+**Example:**
+```javascript
+// Generate a high-quality image with GPT-image-1
+{
+  "text": "A majestic mountain landscape at sunset with a crystal clear lake reflecting the sky",
+  "model": "gpt-image-1",
+  "size": "1536x1024",
+  "quality": "high",
+  "output_format": "webp",
+  "outputPath": "/path/to/save/directory"
+}
+```
 
-**Returns:**
+### Image-to-Image Editing
 
-*   `content`: An array containing:
-    *   A `text` object containing the path to the saved image file (e.g., `./uuid.png` when no `outputPath` is provided). The file is saved in the directory where the MCP server is started unless you supply a custom `outputPath`.
-
-### `image-to-image`
-
-Edits an existing image based on a text prompt and optional mask.
+The `image-to-image` tool edits existing images based on text prompts:
 
 **Parameters:**
+- `images` (required): Array of image file paths to edit
+- `prompt` (required): Text description of desired changes
+- `outputPath` (optional): Directory or file path where the edited image should be saved
+- `mask` (optional): Mask image path (PNG with transparent areas to edit)
+- `model` (optional): Model to use (`dall-e-2`, `gpt-image-1`)
+- `size` (optional): Output image dimensions
+- `output_format` (optional): Output format (`png`, `jpeg`, `webp`)
+- `output_compression` (optional): Compression level (0-100)
+- `quality` (optional): Image quality setting
+- `n` (optional): Number of edited images to generate
 
-*   `images` (string, required): An array of *file paths* to local images.
-*   `prompt` (string, required): A text description of the desired edits.
-*   `mask` (string, optional): A *file path* of mask image (PNG). Transparent areas indicate where the image should be edited.
-*   `model` (enum, optional): The model to use. Only `gpt-image-1` and `dall-e-2` are supported for editing. Defaults to the first allowed model.
-*   `size` (enum, optional): Size of the generated image (e.g., `1024x1024`). Defaults to `1024x1024`. `dall-e-2` only supports `256x256`, `512x512`, `1024x1024`.
-*   `output_format` (enum, optional): Format (`png`, `jpeg`, `webp`). Defaults to `png`.
-*   `output_compression` (number, optional): Compression level (0-100). Defaults to 100.
-*   `quality` (enum, optional): Quality (`standard`, `hd`, `auto`, ...). Defaults to `auto`.
-*   `n` (number, optional): Number of images to generate. Defaults to 1.
+**Example:**
+```javascript
+// Edit an image to add elements
+{
+  "images": ["/path/to/input/image.jpg"],
+  "prompt": "Add a rainbow in the sky and make the lighting more dramatic",
+  "model": "gpt-image-1",
+  "size": "1024x1024",
+  "quality": "high",
+  "outputPath": "/path/to/save/directory"
+}
+```
 
-**Returns:**
+## Quality Settings
 
-*   `content`: An array containing:
-    *   A `text` object containing the path to the saved image file (e.g., `./uuid.png` when no `outputPath` is provided). The file is saved in the directory where the MCP server is started unless you supply a custom `outputPath`.
+### DALL-E 2 & 3
+- `standard`: Standard quality (faster)
+- `hd`: High definition (slower, more detailed)
+
+### GPT-image-1
+- `low`: Low quality (fastest)
+- `medium`: Medium quality (balanced)
+- `high`: High quality (slowest, most detailed)
+
+## Output Formats
+
+- **PNG**: Best for images with transparency or sharp edges
+- **JPEG**: Best for photographs and complex images
+- **WEBP**: Best balance of quality and file size
+
+## Image Sizes
+
+### DALL-E 2
+- `256x256`: Small square
+- `512x512`: Medium square  
+- `1024x1024`: Large square
+
+### DALL-E 3
+- `1024x1024`: Square
+- `1792x1024`: Wide landscape
+- `1024x1792`: Tall portrait
+
+### GPT-image-1
+- `1024x1024`: Square
+- `1536x1024`: Wide landscape
+- `1024x1536`: Tall portrait
+
+## File Management
+
+### Output Path Behavior
+
+- **No outputPath**: Saves to current working directory with UUID filename
+- **Directory path**: Saves to specified directory with UUID filename
+- **File path**: Saves to exact specified location
+- **Relative path**: Resolved relative to current working directory
+
+### File Naming
+
+- Generated images use UUID filenames by default: `550e8400-e29b-41d4-a716-446655440000.webp`
+- Specify exact filename in outputPath to override: `/path/to/my-image.png`
+
+## Error Handling
+
+The server includes comprehensive error handling for:
+
+- **Content Safety**: Automatic prompt validation and sanitization
+- **File Validation**: Image size limits (20MB max) and format checking
+- **API Errors**: Detailed error messages from OpenAI API
+- **Path Validation**: Directory creation and file permission checks
+
+## Content Safety
+
+Built-in content filtering prevents generation of:
+- Explicit or inappropriate content
+- Violence or harmful imagery
+- Copyrighted material
+- Personal information
 
 ## Development
 
-*   **Linting:** `npm run lint` or `yarn lint`
-*   **Formatting:** `npm run format` or `yarn format` (if configured in `package.json`)
+### Building
+
+```bash
+npm run build
+```
+
+### Running in Development
+
+```bash
+npm run dev
+```
+
+### Testing
+
+```bash
+# Test the MCP server
+echo '{"text": "A beautiful sunset"}' | node dist/index.js
+```
+
+## API Compatibility
+
+This server is built to work with the latest OpenAI Image Generation API specifications as of 2024. It supports:
+
+- OpenAI API v1 endpoints
+- Latest model parameters and options
+- Proper error handling and response formats
+- Content moderation and safety features
 
 ## Contributing
 
-Pull Requests (PRs) are welcome! Please feel free to submit improvements or bug fixes. 
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## License
+
+ISC License - see LICENSE file for details
+
+## Support
+
+For issues and questions:
+- GitHub Issues: [https://github.com/spartanz51/imagegen-mcp/issues](https://github.com/spartanz51/imagegen-mcp/issues)
+- Documentation: This README and inline code comments
+
+## Changelog
+
+### v1.1.0
+- Added support for GPT-image-1 model
+- Enhanced image editing capabilities
+- Improved file path handling and MCP compatibility
+- Added content safety validation
+- Better error handling and logging
+- Updated API parameters to match latest OpenAI specifications
+
+### v1.0.4
+- Initial release with DALL-E 2 and DALL-E 3 support
+- Basic text-to-image generation
+- Image editing functionality 

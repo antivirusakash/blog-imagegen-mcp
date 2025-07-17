@@ -1,14 +1,15 @@
 {
   "name": "imagegen-mcp",
-  "version": "1.0.4",
-  "description": "MCP server to generate images from text using OpenAI's API",
+  "version": "1.1.0",
+  "description": "MCP server to generate and edit images using OpenAI's latest API (DALL-E 3, GPT-image-1)",
   "keywords": [
     "mcp",
     "openai",
     "image",
     "generation",
     "imagegen",
-    "mcp-server"
+    "mcp-server",
+    "smithery"
   ],
   "author": "Anthony Maurin",
   "homepage": "https://github.com/spartanz51/imagegen-mcp#readme",
@@ -48,5 +49,14 @@
     "@types/uuid": "^10.0.0",
     "tsx": "^4.7.0",
     "typescript": "^5.3.3"
+  },
+  "mcp": {
+    "server": {
+      "command": "node",
+      "args": ["dist/index.js"],
+      "env": {
+        "OPENAI_API_KEY": "${OPENAI_API_KEY}"
+      }
+    }
   }
 }
